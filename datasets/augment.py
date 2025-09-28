@@ -167,6 +167,7 @@ def object_noise(data_dict, num_try, translation_std, rot_range, ratio):
         masks = remove_pts_in_bboxes(pts, gt_bboxes_3d, rm=False)
         
         gt_bboxes_3d, pts = object_noise_core(
+            pts=pts,
             gt_bboxes_3d=gt_bboxes_3d,
             bev_corners=bev_corners,
             trans_vec=trans_vec,
