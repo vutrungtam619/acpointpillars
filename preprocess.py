@@ -13,6 +13,7 @@ from utils import (
     write_points,
     get_points_num_in_bbox,
     points_in_bboxes_v2,
+    bbox_camera2lidar,
 )
 
 root = Path(__file__).parent
@@ -44,23 +45,29 @@ def filter_points_by_range(pts, point_range):
     
     return pts[keep_mask]
 
-def filter_objects_by_range(annotation_dict, object_range):
+def filter_objects_by_range(annotation_dict, object_range, tr_velo_to_cam, r0_rect):
     locs = annotation_dict['locations']
-    
+    dims = annotation_dict['dimensions']
+    rots = annotation_dict['rotation_y']
+
+    # tạo bbox camera -> lidar
+    bboxes_cam = np.concatenate([locs, dims, rots[:, None]], axis=1)
+    bboxes_lidar = bbox_camera2lidar(bboxes_cam, tr_velo_to_cam, r0_rect)
+
     keep_mask = np.all([
-        locs[:,0] >= object_range[0], locs[:,0] <= object_range[3],
-        locs[:,1] >= object_range[1], locs[:,1] <= object_range[4],
-        locs[:,2] >= object_range[2], locs[:,2] <= object_range[5]
+        bboxes_lidar[:, 0] >= object_range[0], bboxes_lidar[:, 0] <= object_range[3],
+        bboxes_lidar[:, 1] >= object_range[1], bboxes_lidar[:, 1] <= object_range[4],
+        bboxes_lidar[:, 2] >= object_range[2], bboxes_lidar[:, 2] <= object_range[5]
     ], axis=0)
-    
+
     filtered_dict = {}
     for key, val in annotation_dict.items():
         if isinstance(val, np.ndarray) and val.shape[0] == locs.shape[0]:
             filtered_dict[key] = val[keep_mask]
         else:
-            filtered_dict[key] = val 
-    
-    return filtered_dict    
+            filtered_dict[key] = val
+
+    return filtered_dict  
 
 def process_one_idx(idx, data_root, split, label, lidar_reduced_folder, db=False, db_points_folder=None):
     cur_info_dict = {}
@@ -95,7 +102,7 @@ def process_one_idx(idx, data_root, split, label, lidar_reduced_folder, db=False
     if label:
         label_path = Path(data_root) / split / 'label_2' / f'{idx}.txt'
         annotation_dict = read_label(label_path)
-        annotation_dict = filter_objects_by_range(annotation_dict=annotation_dict, object_range=config['point_cloud_range'])
+        annotation_dict = filter_objects_by_range(annotation_dict, config['point_cloud_range'], calib_dict['tr_velo_to_cam'], calib_dict['r0_rect'])
         annotation_dict['difficulty'] = judge_difficulty(annotation_dict)
         annotation_dict['num_points_in_gt'] = get_points_num_in_bbox(
             points=lidar_points,
@@ -122,7 +129,7 @@ def process_one_idx(idx, data_root, split, label, lidar_reduced_folder, db=False
                 db_points = lidar_points[indices[:, j]]
                 db_points[:, :3] -= bboxes_lidar[j, :3]
                 db_points_saved_name = db_points_folder / f'{int(idx)}_{names[j]}_{j}.bin'
-                write_points(db_points, db_points_saved_name)
+                write_points(db_points_saved_name, db_points)
                 db_info = {
                     'name': names[j],
                     'path': str(db_points_saved_name), # root/datasets/train_gt_database/000001_Car_0.bin
