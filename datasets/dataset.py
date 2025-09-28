@@ -69,7 +69,7 @@ class Kitti(Dataset):
             db_infos[k] = [item for item in v if item['difficulty'] != -1]
         # 2. filter_by_min_points, dict(Car=5, Pedestrian=10, Cyclist=10)
         filter_thrs = dict(Car=5, Pedestrian=10, Cyclist=10)
-        for cat in self.CLASSES:
+        for cat in self.classes:
             filter_thr = filter_thrs[cat]
             db_infos[cat] = [item for item in db_infos[cat] if item['num_points_in_gt'] >= filter_thr]
         
