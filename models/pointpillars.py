@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from pathlib import Path
 from configs import config
 from packages import Voxelization, nms_cuda
-from models import Anchors, anchor_target, anchors2bboxes
+from .anchor import Anchors, anchor_target, anchors2bboxes
 from utils import limit_period
 
 class PillarLayer(nn.Module):

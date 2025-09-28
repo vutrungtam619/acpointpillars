@@ -14,10 +14,6 @@ from utils import (
     get_points_num_in_bbox,
     points_in_bboxes_v2,
 )
-from datasets import (
-    points_range_filter,
-    objects_range_filter,
-)
 
 root = Path(__file__).parent
 
