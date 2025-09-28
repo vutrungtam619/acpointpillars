@@ -86,7 +86,8 @@ def db_sample_aug(data_dict, classes, db_sample, sample_groups):
             'gt_names': gt_names,
             'difficulty': difficulty,
             'image_info': image_info,
-            'calib_info': calib_info
+            'calib_info': calib_info,
+            'index': index,
         }
     return data_dict
 
