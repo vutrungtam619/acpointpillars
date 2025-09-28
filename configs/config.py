@@ -11,7 +11,7 @@ config = {
     'voxel_size': [0.16, 0.16, 4],
     'max_voxels': (12000, 12000),
     'max_points': 64,
-    'batch_size_train': 4,
+    'batch_size_train': 2,
     'batch_size_val': 4,
     'num_workers': 4,
     'init_lr': 0.00025,
