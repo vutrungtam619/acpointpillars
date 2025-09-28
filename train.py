@@ -187,6 +187,9 @@ def main(args):
                     batched_gt_bboxes=batched_gt_bboxes, 
                     batched_gt_labels=batched_labels,
                 )   
+                # In case the val batch does not have gt box, skip this batch
+                if all([len(b) == 0 for b in batched_gt_bboxes]):
+                    continue
                 
                 # Reshape
                 bbox_cls_pred = bbox_cls_pred.permute(0, 2, 3, 1).reshape(-1, args.num_classes)
