@@ -330,7 +330,7 @@ class PointPillars(nn.Module):
         self.head = Head(
             in_channel=384,
             n_anchors=2,
-            n_classes=nclasses
+            n_classes=nclasses*2
         )
         
         # anchors
