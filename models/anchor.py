@@ -116,18 +116,19 @@ def bboxes2deltas(bboxes, anchors):
 
 
 def anchor_target(batched_anchors, batched_gt_bboxes, batched_gt_labels, assigners, nclasses):
-    '''
-    batched_anchors: [(y_l, x_l, 3, 2, 7), (y_l, x_l, 3, 2, 7), ... ]
-    batched_gt_bboxes: [(n1, 7), (n2, 7), ...]
-    batched_gt_labels: [(n1, ), (n2, ), ...]
-    return: 
-           dict = {batched_anchors_labels: (bs, n_anchors),
-                   batched_labels_weights: (bs, n_anchors),
-                   batched_anchors_reg: (bs, n_anchors, 7),
-                   batched_reg_weights: (bs, n_anchors),
-                   batched_anchors_dir: (bs, n_anchors),
-                   batched_dir_weights: (bs, n_anchors)}
-    '''
+    """
+    batched_anchors: [(y_l, x_l, 3, 2, 7), ...]
+    batched_gt_bboxes: [(n1, 7), ...]
+    batched_gt_labels: [(n1,), ...]
+    
+    return dict:
+        batched_labels: (bs, n_anchors)
+        batched_label_weights: (bs, n_anchors)
+        batched_bbox_reg: (bs, n_anchors, 7)
+        batched_bbox_reg_weights: (bs, n_anchors)
+        batched_dir_labels: (bs, n_anchors)
+        batched_dir_labels_weights: (bs, n_anchors)
+    """
     assert len(batched_anchors) == len(batched_gt_bboxes) == len(batched_gt_labels)
     batch_size = len(batched_anchors)
     n_assigners = len(assigners)
@@ -139,9 +140,9 @@ def anchor_target(batched_anchors, batched_gt_bboxes, batched_gt_labels, assigne
     for i in range(batch_size):
         anchors = batched_anchors[i]
         gt_bboxes, gt_labels = batched_gt_bboxes[i], batched_gt_labels[i]
+        device = anchors.device
 
         d1, d2, d3, d4, d5 = anchors.size()
-
         multi_labels, multi_label_weights = [], []
         multi_bbox_reg, multi_bbox_reg_weights = [], []
         multi_dir_labels, multi_dir_labels_weights = [], []
@@ -152,32 +153,31 @@ def anchor_target(batched_anchors, batched_gt_bboxes, batched_gt_labels, assigne
 
             cur_anchors = anchors[:, :, j, :, :].reshape(-1, 7)
 
-            # --- BỔ SUNG: xử lý trường hợp gt_bboxes rỗng ---
+            n_anchors = cur_anchors.shape[0]
+
             if gt_bboxes.numel() == 0:
-                n_anchors = cur_anchors.shape[0]
-                assigned_gt_inds = torch.zeros(n_anchors, dtype=torch.long)
-                assigned_gt_labels = torch.zeros(n_anchors, dtype=torch.long) + nclasses
-                assigned_gt_labels_weights = torch.ones(n_anchors)
-                assigned_gt_reg = torch.zeros_like(cur_anchors)
-                assigned_gt_reg_weights = torch.zeros(n_anchors)
-                assigned_gt_dir = torch.zeros(n_anchors, dtype=torch.long)
-                assigned_gt_dir_weights = torch.zeros(n_anchors)
+                # Trường hợp GT rỗng
+                assigned_gt_labels = torch.zeros(n_anchors, dtype=torch.long, device=device) + nclasses
+                assigned_gt_labels_weights = torch.ones(n_anchors, device=device)
+                assigned_gt_reg = torch.zeros_like(cur_anchors, device=device)
+                assigned_gt_reg_weights = torch.zeros(n_anchors, device=device)
+                assigned_gt_dir = torch.zeros(n_anchors, dtype=torch.long, device=device)
+                assigned_gt_dir_weights = torch.zeros(n_anchors, device=device)
             else:
-                overlaps = iou2d_nearest(gt_bboxes, cur_anchors)
+                overlaps = iou2d_nearest(gt_bboxes.to(device), cur_anchors)
                 if overlaps.numel() == 0:
-                    n_anchors = cur_anchors.shape[0]
-                    assigned_gt_inds = torch.zeros(n_anchors, dtype=torch.long)
-                    assigned_gt_labels = torch.zeros(n_anchors, dtype=torch.long) + nclasses
-                    assigned_gt_labels_weights = torch.ones(n_anchors)
-                    assigned_gt_reg = torch.zeros_like(cur_anchors)
-                    assigned_gt_reg_weights = torch.zeros(n_anchors)
-                    assigned_gt_dir = torch.zeros(n_anchors, dtype=torch.long)
-                    assigned_gt_dir_weights = torch.zeros(n_anchors)
+                    # Trường hợp overlaps rỗng (ít xảy ra nhưng vẫn an toàn)
+                    assigned_gt_labels = torch.zeros(n_anchors, dtype=torch.long, device=device) + nclasses
+                    assigned_gt_labels_weights = torch.ones(n_anchors, device=device)
+                    assigned_gt_reg = torch.zeros_like(cur_anchors, device=device)
+                    assigned_gt_reg_weights = torch.zeros(n_anchors, device=device)
+                    assigned_gt_dir = torch.zeros(n_anchors, dtype=torch.long, device=device)
+                    assigned_gt_dir_weights = torch.zeros(n_anchors, device=device)
                 else:
                     max_overlaps, max_overlaps_idx = torch.max(overlaps, dim=0)
                     gt_max_overlaps, _ = torch.max(overlaps, dim=1)
 
-                    assigned_gt_inds = -torch.ones_like(cur_anchors[:, 0], dtype=torch.long)
+                    assigned_gt_inds = -torch.ones_like(cur_anchors[:, 0], dtype=torch.long, device=device)
                     assigned_gt_inds[max_overlaps < neg_iou_thr] = 0
                     assigned_gt_inds[max_overlaps >= pos_iou_thr] = max_overlaps_idx[max_overlaps >= pos_iou_thr] + 1
                     for k in range(len(gt_bboxes)):
@@ -187,25 +187,25 @@ def anchor_target(batched_anchors, batched_gt_bboxes, batched_gt_labels, assigne
                     pos_flag = assigned_gt_inds > 0
                     neg_flag = assigned_gt_inds == 0
 
-                    assigned_gt_labels = torch.zeros_like(cur_anchors[:, 0], dtype=torch.long) + nclasses
-                    assigned_gt_labels[pos_flag] = gt_labels[assigned_gt_inds[pos_flag] - 1].long()
-                    assigned_gt_labels_weights = torch.zeros_like(cur_anchors[:, 0])
+                    assigned_gt_labels = torch.zeros(n_anchors, dtype=torch.long, device=device) + nclasses
+                    assigned_gt_labels[pos_flag] = gt_labels[assigned_gt_inds[pos_flag] - 1].to(device).long()
+                    assigned_gt_labels_weights = torch.zeros(n_anchors, device=device)
                     assigned_gt_labels_weights[pos_flag] = 1
                     assigned_gt_labels_weights[neg_flag] = 1
 
-                    assigned_gt_reg_weights = torch.zeros_like(cur_anchors[:, 0])
+                    assigned_gt_reg_weights = torch.zeros(n_anchors, device=device)
                     assigned_gt_reg_weights[pos_flag] = 1
-                    assigned_gt_reg = torch.zeros_like(cur_anchors)
-                    positive_anchors = cur_anchors[pos_flag]
-                    corr_gt_bboxes = gt_bboxes[assigned_gt_inds[pos_flag] - 1]
-                    if positive_anchors.shape[0] > 0:
+                    assigned_gt_reg = torch.zeros_like(cur_anchors, device=device)
+                    if pos_flag.any():
+                        positive_anchors = cur_anchors[pos_flag]
+                        corr_gt_bboxes = gt_bboxes[assigned_gt_inds[pos_flag] - 1].to(device)
                         assigned_gt_reg[pos_flag] = bboxes2deltas(corr_gt_bboxes, positive_anchors)
 
-                    assigned_gt_dir_weights = torch.zeros_like(cur_anchors[:, 0])
+                    assigned_gt_dir_weights = torch.zeros(n_anchors, device=device)
                     assigned_gt_dir_weights[pos_flag] = 1
-                    assigned_gt_dir = torch.zeros_like(cur_anchors[:, 0], dtype=torch.long)
-                    if positive_anchors.shape[0] > 0:
-                        dir_cls_targets = limit_period(corr_gt_bboxes[:, 6].cpu(), 0, 2 * np.pi).to(corr_gt_bboxes)
+                    assigned_gt_dir = torch.zeros(n_anchors, dtype=torch.long, device=device)
+                    if pos_flag.any():
+                        dir_cls_targets = limit_period(corr_gt_bboxes[:, 6], 0, 2 * np.pi)
                         dir_cls_targets = torch.floor(dir_cls_targets / np.pi).long()
                         assigned_gt_dir[pos_flag] = torch.clamp(dir_cls_targets, min=0, max=1)
 
@@ -241,4 +241,5 @@ def anchor_target(batched_anchors, batched_gt_bboxes, batched_gt_labels, assigne
     )
 
     return rt_dict
+
             
