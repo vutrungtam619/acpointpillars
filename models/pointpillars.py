@@ -502,7 +502,7 @@ class PointPillars(nn.Module):
                                                batched_gt_labels=batched_gt_labels, 
                                                assigners=self.assigners,
                                                nclasses=self.nclasses)
-            return results
+            return bbox_cls_pred, bbox_pred, bbox_dir_cls_pred, anchor_target_dict
 
         elif mode == 'test':
             results = self.get_predicted_bboxes(bbox_cls_pred=bbox_cls_pred, 
