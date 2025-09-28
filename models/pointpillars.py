@@ -291,7 +291,7 @@ class PointPillars(nn.Module):
         )
         
         self.backbone3x3 = Backbone(
-            in_channel=64,
+            in_channels=64,
             out_channels=[64, 128, 256],
             layer_nums=[2, 2, 3],
             layer_strides=[2, 2, 2],
@@ -300,7 +300,7 @@ class PointPillars(nn.Module):
         )
         
         self.backbone3x1 = Backbone(
-            in_channel=64,
+            in_channels=64,
             out_channels=[64, 128, 256],
             layer_nums=[2, 2, 3],
             layer_strides=[2, 2, 2],
@@ -309,7 +309,7 @@ class PointPillars(nn.Module):
         )
 
         self.backbone1x3 = Backbone(
-            in_channel=64,
+            in_channels=64,
             out_channels=[64, 128, 256],
             layer_nums=[2, 2, 3],
             layer_strides=[2, 2, 2],
