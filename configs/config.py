@@ -9,7 +9,7 @@ config = {
     'num_classes': 3,
     'point_cloud_range': [0, -39.68, -3, 69.12, 39.68, 1],
     'voxel_size': [0.16, 0.16, 4],
-    'max_voxels': (12000, 12000),
+    'max_voxels': (16000, 12000),
     'max_points': 64,
     'batch_size_train': 2,
     'batch_size_val': 4,
