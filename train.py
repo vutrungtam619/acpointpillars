@@ -47,7 +47,7 @@ def main(args):
     )
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer, 
-        max_lr=args.init_lr, 
+        max_lr=args.init_lr*2, 
         total_steps=max_iters, 
         pct_start=0.3,
         anneal_strategy='cos', 
