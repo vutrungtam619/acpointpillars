@@ -178,7 +178,8 @@ def object_noise(data_dict, num_try, translation_std, rot_range, ratio):
             'gt_bboxes_3d': gt_bboxes_3d,
             'pts': pts,
         })
-        return data_dict
+        
+    return data_dict
 
 def random_flip(data_dict, ratio):
     if np.random.rand() < ratio:
