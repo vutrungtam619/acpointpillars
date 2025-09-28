@@ -287,7 +287,7 @@ class PointPillars(nn.Module):
         self.pillar_encoder = PillarEncoder(
             voxel_size=voxel_size,
             point_cloud_range=point_cloud_range,
-            out_channel=64,
+            out_channels=64,
         )
         
         self.backbone3x3 = Backbone(
