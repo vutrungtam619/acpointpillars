@@ -111,7 +111,7 @@ def main(args):
             batched_bbox_reg = anchor_target_dict['batched_bbox_reg'].reshape(-1, 7)
             batched_dir_labels = anchor_target_dict['batched_dir_labels'].reshape(-1)
             
-            pos_idx = (batched_bbox_labels >= 0) & (batched_bbox_labels < args.nclasses)
+            pos_idx = (batched_bbox_labels >= 0) & (batched_bbox_labels < args.num_classes)
             bbox_pred = bbox_pred[pos_idx]
             batched_bbox_reg = batched_bbox_reg[pos_idx]
             a = bbox_pred[:, -1].clone()
@@ -121,9 +121,9 @@ def main(args):
             bbox_dir_cls_pred = bbox_dir_cls_pred[pos_idx]
             batched_dir_labels = batched_dir_labels[pos_idx]
             
-            num_cls_pos = (batched_bbox_labels < args.nclasses).sum()
+            num_cls_pos = (batched_bbox_labels < args.num_classes).sum()
             bbox_cls_pred = bbox_cls_pred[batched_label_weights > 0]
-            batched_bbox_labels[batched_bbox_labels < 0] = args.nclasses
+            batched_bbox_labels[batched_bbox_labels < 0] = args.num_classes
             batched_bbox_labels = batched_bbox_labels[batched_label_weights > 0]
             
             loss_dict = loss_func(
@@ -198,7 +198,7 @@ def main(args):
                 batched_bbox_reg = anchor_target_dict['batched_bbox_reg'].reshape(-1, 7)
                 batched_dir_labels = anchor_target_dict['batched_dir_labels'].reshape(-1)
                 
-                pos_idx = (batched_bbox_labels >= 0) & (batched_bbox_labels < args.nclasses)
+                pos_idx = (batched_bbox_labels >= 0) & (batched_bbox_labels < args.num_classes)
                 bbox_pred = bbox_pred[pos_idx]
                 batched_bbox_reg = batched_bbox_reg[pos_idx]
                 a = bbox_pred[:, -1].clone()
@@ -208,9 +208,9 @@ def main(args):
                 bbox_dir_cls_pred = bbox_dir_cls_pred[pos_idx]
                 batched_dir_labels = batched_dir_labels[pos_idx]
                 
-                num_cls_pos = (batched_bbox_labels < args.nclasses).sum()
+                num_cls_pos = (batched_bbox_labels < args.num_classes).sum()
                 bbox_cls_pred = bbox_cls_pred[batched_label_weights > 0]
-                batched_bbox_labels[batched_bbox_labels < 0] = args.nclasses
+                batched_bbox_labels[batched_bbox_labels < 0] = args.num_classes
                 batched_bbox_labels = batched_bbox_labels[batched_label_weights > 0]
                 
                 loss_dict = loss_func(
