@@ -132,7 +132,7 @@ class InvertedResidualBlock(nn.Module):
             nn.Conv2d(hidden_dim, hidden_dim, kernel_size, stride=stride, padding=padding, groups=hidden_dim, bias=False),
             nn.BatchNorm2d(hidden_dim),
             nn.ReLU6(inplace=True),
-            nn.Conv2d(hidden_dim, out_channels, 1, bias=False),
+            nn.Conv2d(hidden_dim, out_channels, kernel_size=1, bias=False),
             nn.BatchNorm2d(out_channels)
         ])
         self.conv = nn.Sequential(*layers)
